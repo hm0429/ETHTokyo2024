@@ -1,7 +1,7 @@
 import { ethers } from "./ethers-5.2.esm.min.js";
 
 const CONTRACT_ADDRESS = "0x50D0f01c1D3Fd79a6Cf226a3F63d442c9DeA9bc5";
-const CONTRACT_ABI = [{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"}],"name":"resolver","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"}];
+const CONTRACT_ABI = [{"inputs":[{"internalType":"bytes32","name":"idmHash","type":"bytes32"}],"name":"register","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"idmHash","type":"bytes32"}],"name":"unregister","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"name":"addresses","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"idmHash","type":"bytes32"}],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}];
 
 let provider;
 let contract;
@@ -29,10 +29,6 @@ async function connectDevice(device) {
         out: deviceInterface.alternate.endpoints.filter(e => e.direction == 'out')[0].endpointNumber,
     };
     await startSession(device);
-}
-
-async function onStartButtonClick() {
-    await readNFC();
 }
 
 function createData(command, sequenceNumber) {
@@ -121,11 +117,34 @@ function buffer2HexString(buffer) {
 }
 
 
+async function onStartButtonClick() {
+    await readNFC();
+}
+
+async function onRegisterIdmButtonClick() {
+    let idmHash = $('#idmhash').text();
+    console.log(idmHash);
+    if (idmHash == "") {
+        alert("Please read your Suica first.");
+        return;
+    }
+    try {
+        const tx = await contract.register(idmHash);
+        console.log(tx);
+        alert("tx hash" + tx.hash);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 $(window).on('load', async ()=> {
+    $('#start-button').on('click', onStartButtonClick);
+    $('#register-idm-button').on('click', onRegisterIdmButtonClick);
     provider = new ethers.providers.Web3Provider(window.ethereum)
     await provider.send("eth_requestAccounts", []);
     signer = provider.getSigner();
     contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+    console.log(contract);
     console.log(ethers.version);
 
     let devices = await navigator.usb.getDevices();
