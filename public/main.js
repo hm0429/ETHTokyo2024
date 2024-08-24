@@ -80,20 +80,32 @@ async function startSession(device) {
         const data = await receiveData(device);
         console.log(data)
         if (data.length == 46) {
-            idm = data.slice(26,34).map(v => dec2HexString(v)).join('').toUpperCase();  
-            console.log(idm);
-            $('#idm').text(idm);
+            let idmData = data.slice(26,34)
+            console.log(idmData);
+            let idmString = buffer2HexString(new Uint8Array(idmData));
+            console.log(idmString);
+            $('#idm').text(idmString);
+            // sha256 hash of idm
+            let idmhashString = await sha256(new Uint8Array(idmData)); 
+            console.log(idmhashString);
+            $('#idmhash').text("0x" + idmhashString);
         }
         await sleep(500);
     } while (true);
 }
 
+async function sha256(buffer) {
+    const digest = await crypto.subtle.digest('SHA-256', buffer);
+    return buffer2HexString(digest);
+}
+ 
+
 async function sleep(msec) {
     return new Promise(resolve => setTimeout(resolve, msec));
 }
 
-function dec2HexString(dec) {
-    return ('00' + dec.toString(16)).slice(-2);
+function buffer2HexString(buffer) {
+    return [].map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('').toUpperCase();
 }
 
 
