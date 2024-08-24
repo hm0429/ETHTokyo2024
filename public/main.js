@@ -1,8 +1,7 @@
 import { ethers } from "./ethers-5.2.esm.min.js";
 
-const NETWORK = "sepolia";
-const CONTRACT_ADDRESS = "0xE903322512e2e154adF3853dBEa037e96022394f";
-const CONTRACT_ABI = [{"inputs":[{"internalType":"bytes32","name":"idmHash","type":"bytes32"}],"name":"register","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"idmHash","type":"bytes32"}],"name":"unregister","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"name":"addresses","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ensRegistry","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ensReverseRegistrar","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"idmHash","type":"bytes32"}],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}]
+const CONTRACT_ADDRESS = "0x50D0f01c1D3Fd79a6Cf226a3F63d442c9DeA9bc5";
+const CONTRACT_ABI = [{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"}],"name":"resolver","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"}];
 
 let provider;
 let contract;
