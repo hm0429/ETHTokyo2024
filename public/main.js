@@ -6,7 +6,11 @@ let deviceEp = {
 let sequenceNumber = 0;
 
 async function readNFC() {
-    device = await navigator.usb.requestDevice({ filters: []});
+    let device = await navigator.usb.requestDevice({ filters: []});
+    await connectDevice(device);
+}
+
+async function connectDevice(device) {
     await device.open();
     await device.selectConfiguration(1);
     const interface = device.configuration.interfaces.filter(v => v.alternate.interfaceClass == 255)[0];
@@ -70,13 +74,18 @@ async function startSession(device) {
     console.log(await receiveData(device));
 
     // Polling Felica
-    await sendData(device, [0xFF, 0x50, 0x00, 0x01, 0x00, 0x00, 0x11, 0x5F, 0x46, 0x04, 0xA0, 0x86, 0x01, 0x00, 0x95, 0x82, 0x00, 0x06, 0x06, 0x00, 0xFF, 0xFF, 0x01, 0x00, 0x00, 0x00, 0x00]);
-    const data = await receiveData(device);
-    console.log(data)
-    if (data.length == 46) {
-        const idm = data.slice(26,34).map(v => dec2HexString(v)).join('').toUpperCase();  
-        console.log(idm); 
-    }
+    var idm = null;
+    do {
+        await sendData(device, [0xFF, 0x50, 0x00, 0x01, 0x00, 0x00, 0x11, 0x5F, 0x46, 0x04, 0xA0, 0x86, 0x01, 0x00, 0x95, 0x82, 0x00, 0x06, 0x06, 0x00, 0xFF, 0xFF, 0x01, 0x00, 0x00, 0x00, 0x00]);
+        const data = await receiveData(device);
+        console.log(data)
+        if (data.length == 46) {
+            idm = data.slice(26,34).map(v => dec2HexString(v)).join('').toUpperCase();  
+            console.log(idm);
+            $('#idm').text(idm);
+        }
+        await sleep(500);
+    } while (true);
 }
 
 async function sleep(msec) {
@@ -86,3 +95,11 @@ async function sleep(msec) {
 function dec2HexString(dec) {
     return ('00' + dec.toString(16)).slice(-2);
 }
+
+
+$(window).on('load', async ()=> {
+    let devices = await navigator.usb.getDevices();
+    if (devices.length) {
+        await connectDevice(devices[0]);
+    }
+});
