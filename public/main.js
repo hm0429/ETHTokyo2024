@@ -1,12 +1,12 @@
-import { ethers } from 'https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js';
+import { ethers } from "./ethers-5.2.esm.min.js";
 
 const NETWORK = "sepolia";
 const CONTRACT_ADDRESS = "0xE903322512e2e154adF3853dBEa037e96022394f";
 const CONTRACT_ABI = [{"inputs":[{"internalType":"bytes32","name":"idmHash","type":"bytes32"}],"name":"register","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"idmHash","type":"bytes32"}],"name":"unregister","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"name":"addresses","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ensRegistry","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ensReverseRegistrar","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"idmHash","type":"bytes32"}],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}]
 
-let contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, ethers.getDefaultProvider(NETWORK));
-let signer = null;
 let provider;
+let contract;
+let signer;
 
 let deviceEp = {
     in: 0,
@@ -123,12 +123,10 @@ function buffer2HexString(buffer) {
 
 
 $(window).on('load', async ()=> {
-    if (window.ethereum == null) {
-        provider = ethers.getDefaultProvider(NETWORK);
-    } else {
-        provider = new ethers.BrowserProvider(window.ethereum)
-        signer = await provider.getSigner();
-    }
+    provider = new ethers.providers.Web3Provider(window.ethereum)
+    await provider.send("eth_requestAccounts", []);
+    signer = provider.getSigner();
+    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
     console.log(ethers.version);
 
     let devices = await navigator.usb.getDevices();
