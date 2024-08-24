@@ -38,14 +38,13 @@ function createData(command, sequenceNumber) {
 
 async function sendData(device, command) {
     let data = createData(command, ++sequenceNumber);
-    console.log(data);
     await device.transferOut(deviceEp.out, data);
+    await sleep(50);
 }
 
 async function receiveData(device) {
     const LENGTH = 50;
     let result = await device.transferIn(deviceEp.in, LENGTH);
-    console.log(result);
     let array = [];
     for (let i = result.data.byteOffset; i < result.data.byteLength; i++) {
         array.push(result.data.getUint8(i));
@@ -57,4 +56,33 @@ async function startSession(device) {
     // Firmware Version
     await sendData(device, [0xFF, 0x56, 0x00, 0x00]);
     console.log(await receiveData(device));
+
+    // Switch to TypeF
+    await sendData(device, [0xff, 0x50, 0x00, 0x02, 0x04, 0x8f, 0x02, 0x03, 0x00, 0x00]);
+    console.log(await receiveData(device));
+
+    // Start Transparent
+    await sendData(device, [0xFF, 0x50, 0x00, 0x00, 0x02, 0x81, 0x00, 0x00]);
+    console.log(await receiveData(device));
+
+    // RF on
+    await sendData(device, [0xFF, 0x50, 0x00, 0x00, 0x02, 0x84, 0x00, 0x00]);
+    console.log(await receiveData(device));
+
+    // Polling Felica
+    await sendData(device, [0xFF, 0x50, 0x00, 0x01, 0x00, 0x00, 0x11, 0x5F, 0x46, 0x04, 0xA0, 0x86, 0x01, 0x00, 0x95, 0x82, 0x00, 0x06, 0x06, 0x00, 0xFF, 0xFF, 0x01, 0x00, 0x00, 0x00, 0x00]);
+    const data = await receiveData(device);
+    console.log(data)
+    if (data.length == 46) {
+        const idm = data.slice(26,34).map(v => dec2HexString(v)).join('').toUpperCase();  
+        console.log(idm); 
+    }
+}
+
+async function sleep(msec) {
+    return new Promise(resolve => setTimeout(resolve, msec));
+}
+
+function dec2HexString(dec) {
+    return ('00' + dec.toString(16)).slice(-2);
 }
