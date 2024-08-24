@@ -1,3 +1,13 @@
+import { ethers } from 'https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js';
+
+const NETWORK = "sepolia";
+const CONTRACT_ADDRESS = "0xE903322512e2e154adF3853dBEa037e96022394f";
+const CONTRACT_ABI = [{"inputs":[{"internalType":"bytes32","name":"idmHash","type":"bytes32"}],"name":"register","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"idmHash","type":"bytes32"}],"name":"unregister","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"name":"addresses","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ensRegistry","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ensReverseRegistrar","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"idmHash","type":"bytes32"}],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}]
+
+let contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, ethers.getDefaultProvider(NETWORK));
+let signer = null;
+let provider;
+
 let deviceEp = {
     in: 0,
     out: 0
@@ -13,11 +23,11 @@ async function readNFC() {
 async function connectDevice(device) {
     await device.open();
     await device.selectConfiguration(1);
-    const interface = device.configuration.interfaces.filter(v => v.alternate.interfaceClass == 255)[0];
-    await device.claimInterface(interface.interfaceNumber);
+    const deviceInterface = device.configuration.interfaces.filter(v => v.alternate.interfaceClass == 255)[0];
+    await device.claimInterface(deviceInterface.interfaceNumber);
     deviceEp = {
-        in: interface.alternate.endpoints.filter(e => e.direction == 'in')[0].endpointNumber,
-        out: interface.alternate.endpoints.filter(e => e.direction == 'out')[0].endpointNumber,
+        in: deviceInterface.alternate.endpoints.filter(e => e.direction == 'in')[0].endpointNumber,
+        out: deviceInterface.alternate.endpoints.filter(e => e.direction == 'out')[0].endpointNumber,
     };
     await startSession(device);
 }
@@ -80,23 +90,26 @@ async function startSession(device) {
         const data = await receiveData(device);
         console.log(data)
         if (data.length == 46) {
-            let idmData = data.slice(26,34)
-            console.log(idmData);
-            let idmString = buffer2HexString(new Uint8Array(idmData));
-            console.log(idmString);
-            $('#idm').text(idmString);
-            // sha256 hash of idm
-            let idmhashString = await sha256(new Uint8Array(idmData)); 
-            console.log(idmhashString);
-            $('#idmhash').text("0x" + idmhashString);
+            let idmData = new Uint8Array(data.slice(26,34));
+            $('#idm').text(buffer2HexString(idmData));
+            let idmhash = await sha256(idmData);
+            console.log(idmhash)
+            $('#idmhash').text("0x" + buffer2HexString(idmhash));
+            try {
+                let ensName = await contract.name(idmhash);
+                console.log(ensName); 
+                $('#ensname').text(ensName);
+            } catch (e) {
+                console.error(e);
+                $('#ensname').text("");
+            }
         }
         await sleep(500);
     } while (true);
 }
 
 async function sha256(buffer) {
-    const digest = await crypto.subtle.digest('SHA-256', buffer);
-    return buffer2HexString(digest);
+    return new Uint8Array(await crypto.subtle.digest('SHA-256', buffer));
 }
  
 
@@ -110,6 +123,14 @@ function buffer2HexString(buffer) {
 
 
 $(window).on('load', async ()=> {
+    if (window.ethereum == null) {
+        provider = ethers.getDefaultProvider(NETWORK);
+    } else {
+        provider = new ethers.BrowserProvider(window.ethereum)
+        signer = await provider.getSigner();
+    }
+    console.log(ethers.version);
+
     let devices = await navigator.usb.getDevices();
     if (devices.length) {
         await connectDevice(devices[0]);
