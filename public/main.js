@@ -94,9 +94,11 @@ async function startSession(device) {
                 let ensName = await contract.name(idmhash);
                 console.log(ensName); 
                 $('#ensname').text(ensName);
+                $('#displayensname').html(`<p>Hello, ${ensName} !</p>`);
             } catch (e) {
                 console.error(e);
                 $('#ensname').text("");
+                $('#displayensname').html("");
             }
         }
         await sleep(500);
@@ -131,7 +133,7 @@ async function onRegisterIdmButtonClick() {
     try {
         const tx = await contract.register(idmHash);
         console.log(tx);
-        alert("tx hash" + tx.hash);
+        alert("tx hash: " + tx.hash);
     } catch (e) {
         console.error(e);
     }

@@ -1,0 +1,18 @@
+
+body {
+  background-color: #1d1d1d;
+  color: antiquewhite;
+}
+
+
+#displayensname {
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100%;
+    font-size: 10vw;
+    color: antiquewhite;
+    font-family: "Helvetica Neue";
+}
